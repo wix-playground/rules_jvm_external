@@ -144,7 +144,7 @@ def _generate_imports(repository_ctx, dep_tree, explicit_artifacts, neverlink_ar
             # java_import(
             # 	name = "org_hamcrest_hamcrest_library",
             #
-            target_import_string.append("\tname = \"%s\"," % target_label)
+            target_import_string.append("\tname = \"%s_plain\"," % target_label)
 
             # 3. Generate the jars/aar attribute to the relative path of the artifact.
             #    Optionally generate srcjar attr too.
@@ -220,8 +220,8 @@ def _generate_imports(repository_ctx, dep_tree, explicit_artifacts, neverlink_ar
             # 	],
             #   tags = ["maven_coordinates=org.hamcrest:hamcrest.library:1.3"],
             #   neverlink = True,
-            if neverlink_artifacts.get(simple_coord):
-                target_import_string.append("\tneverlink = True,")
+            #if neverlink_artifacts.get(simple_coord):
+            #    target_import_string.append("\tneverlink = True,")
 
             # 7. If `testonly` is True in the artifact spec, add the testonly attribute to make this artifact
             #    available only as a test dependency.
@@ -273,6 +273,24 @@ def _generate_imports(repository_ctx, dep_tree, explicit_artifacts, neverlink_ar
             target_import_string.append(")")
 
             all_imports.append("\n".join(target_import_string))
+
+            # for neverlink artifacts use jvm_library to export with neverlink
+            # for others create an alias
+            if neverlink_artifacts.get(simple_coord):
+                neverlink_export_string = ["java_library("]
+                neverlink_export_string.append("\tname = \"%s\"," % target_label)
+                neverlink_export_string.append("\tneverlink = True,")
+                neverlink_export_string.append("\texports = [\":" + target_label + "_plain\"],")
+                neverlink_export_string.append("\tvisibility = [\"//visibility:public\"],")
+                neverlink_export_string.append(")")
+                all_imports.append("\n".join(neverlink_export_string))
+            else:
+                alias_string = ["alias("]
+                alias_string.append("\tname = \"%s\"," % target_label)
+                alias_string.append("\tactual = \"%s_plain\"," % target_label)
+                alias_string.append("\tvisibility = [\"//visibility:public\"],")
+                alias_string.append(")")
+                all_imports.append("\n".join(alias_string))
 
             # 10. Create a versionless alias target
             #

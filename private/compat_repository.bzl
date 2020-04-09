@@ -12,6 +12,12 @@ alias(
     actual = "@{generating_repository}//:{target_name}",
     visibility = ["//visibility:public"]
 )
+
+alias(
+    name = "linkable",
+    actual = "@{generating_repository}//:{target_name}_plain",
+    visibility = ["//visibility:public"]
+)
 """
 
 def _compat_repository_impl(repository_ctx):
