@@ -229,7 +229,7 @@ def get_home_netrc_contents(repository_ctx):
     return ""
 
 def _get_jq_http_files():
-    '''Returns repository targets for the `jq` dependency that `pin.sh` needs.'''
+    """Returns repository targets for the `jq` dependency that `pin.sh` needs."""
     lines = []
     for jq in JQ_VERSIONS:
         lines.extend([
@@ -399,11 +399,13 @@ def _pinned_coursier_fetch_impl(repository_ctx):
                 "        generating_repository = \"%s\"," % repository_ctx.name,
                 "    )",
             ])
-            repository_ctx.file(
-                "compat.bzl",
-                "\n".join(compat_repositories_bzl) + "\n",
-                False,  # not executable
-            )
+        if len(jar_versionless_target_labels) == 0:
+            compat_repositories_bzl.append("    pass")
+        repository_ctx.file(
+            "compat.bzl",
+            "\n".join(compat_repositories_bzl) + "\n",
+            False,  # not executable
+        )
 
 def split_url(url):
     protocol = url[:url.find("://")]
@@ -487,8 +489,7 @@ def make_coursier_dep_tree(
         fetch_sources,
         use_unsafe_shared_cache,
         timeout,
-        report_progress_prefix="",
-):
+        report_progress_prefix = ""):
     # Set up artifact exclusion, if any. From coursier fetch --help:
     #
     # Path to the local exclusion file. Syntax: <org:name>--<org:name>. `--` means minus. Example file content:
@@ -553,14 +554,17 @@ def make_coursier_dep_tree(
 
     repository_ctx.report_progress(
         "%sResolving and fetching the transitive closure of %s artifact(s).." % (
-            report_progress_prefix, len(artifact_coordinates)))
+            report_progress_prefix,
+            len(artifact_coordinates),
+        ),
+    )
     exec_result = repository_ctx.execute(cmd, timeout = timeout, environment = environment)
     if (exec_result.return_code != 0):
         fail("Error while fetching artifact with coursier: " + exec_result.stderr)
 
     return _deduplicate_artifacts(json_parse(repository_ctx.read(repository_ctx.path(
-        "dep-tree.json"))))
-
+        "dep-tree.json",
+    ))))
 
 def _coursier_fetch_impl(repository_ctx):
     # Not using maven_install.json, so we resolve and fetch from scratch.
@@ -671,7 +675,7 @@ def _coursier_fetch_impl(repository_ctx):
         coord_split = artifact["coord"].split(":")
         coord_unversioned = "{}:{}".format(coord_split[0], coord_split[1])
         should_jetify = jetify_all or (repository_ctx.attr.jetify and coord_unversioned in jetify_include_dict)
-        if should_jetify :
+        if should_jetify:
             artifact["directDependencies"] = jetify_artifact_dependencies(artifact["directDependencies"])
             artifact["dependencies"] = jetify_artifact_dependencies(artifact["dependencies"])
 
@@ -866,6 +870,8 @@ def _coursier_fetch_impl(repository_ctx):
                 "        generating_repository = \"%s\"," % repository_ctx.name,
                 "    )",
             ])
+        if len(jar_versionless_target_labels) == 0:
+            compat_repositories_bzl.append("    pass")
         repository_ctx.file(
             "compat.bzl",
             "\n".join(compat_repositories_bzl) + "\n",
