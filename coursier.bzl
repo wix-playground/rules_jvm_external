@@ -244,6 +244,13 @@ def _get_jq_http_files():
         ])
     return lines
 
+def _scala_base_version(version):
+    parts = version.split('_')
+    if len(parts) > 3 and parts[-1].isdigit() and parts[-2].isdigit() and parts[-3] == '2':
+      return "_".join(parts[:-1])
+    else:
+      return version
+
 def _pinned_coursier_fetch_impl(repository_ctx):
     if not repository_ctx.attr.maven_install_json:
         fail("Please specify the file label to maven_install.json (e.g." +
@@ -393,9 +400,21 @@ def _pinned_coursier_fetch_impl(repository_ctx):
         compat_repositories_bzl = ["load(\"@%s//:compat_repository.bzl\", \"compat_repository\")" % repository_ctx.name]
         compat_repositories_bzl.append("def compat_repositories():")
         for versionless_target_label in jar_versionless_target_labels:
+            scala_compat_version = _scala_base_version(versionless_target_label)
+
+            if scala_compat_version != versionless_target_label:
+                compat_repositories_bzl.extend([
+                    "    compat_repository(",
+                    "        name = \"%s\"," % scala_compat_version,
+                    "        target_name = \"%s\"," % versionless_target_label,
+                    "        generating_repository = \"%s\"," % repository_ctx.name,
+                    "    )",
+                ])
+
             compat_repositories_bzl.extend([
                 "    compat_repository(",
                 "        name = \"%s\"," % versionless_target_label,
+                "        target_name = \"%s\"," % versionless_target_label,
                 "        generating_repository = \"%s\"," % repository_ctx.name,
                 "    )",
             ])
