@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load(":coursier.bzl", "coursier_fetch", "pinned_coursier_fetch")
+load(":coursier.bzl", "coursier_fetch", "pinned_coursier_fetch", "pinned_coursier_fetch_dict")
 load(":specs.bzl", "json", "parse")
 load("//:private/dependency_tree_parser.bzl", "JETIFY_INCLUDE_LIST_JETIFY_ALL")
 
@@ -29,6 +29,7 @@ def maven_install(
         generate_compat_repositories = False,
         version_conflict_policy = "default",
         maven_install_json = None,
+        maven_install_dict = None,
         override_targets = {},
         strict_visibility = False,
         resolve_timeout = 600,
@@ -58,7 +59,9 @@ def maven_install(
         conflicts.  If "pinned", choose the user's version unconditionally.  If "default", follow
         Coursier's default policy.
       maven_install_json: A label to a `maven_install.json` file to use pinned artifacts for generating
-        build targets. e.g `//:maven_install.json`.
+        build targets. e.g `//:maven_install.json`. Must not be specified together with `maven_install_dict`.
+      maven_install_dict: A dict with contents equivalent to `maven_install_json` to use pinned artifacts for
+        generating build targets. Must not be specified together with `maven_install_json`.
       override_targets: A mapping of `group:artifact` to Bazel target labels. All occurrences of the
         target label for `group:artifact` will be an alias to the specified label, therefore overriding
         the original generated `jvm_import` or `aar_import` target.
@@ -70,6 +73,9 @@ def maven_install(
       jetify_include_list: List of artifacts that need to be jetified in `groupId:artifactId` format. By default all artifacts are jetified if `jetify` is set to True.
       additional_netrc_lines: Additional lines prepended to the netrc file used by `http_file` (with `maven_install_json` only).
     """
+    pinned = maven_install_json != None or maven_install_dict != None
+    use_bzl_instead_of_json = maven_install_dict
+
     repositories_json_strings = []
     for repository in parse.parse_repository_spec_list(repositories):
         repositories_json_strings.append(json.write_repository_spec(repository))
@@ -82,8 +88,8 @@ def maven_install(
     for exclusion in parse.parse_exclusion_spec_list(excluded_artifacts):
         excluded_artifacts_json_strings.append(json.write_exclusion_spec(exclusion))
 
-    if additional_netrc_lines and maven_install_json == None:
-        fail("`additional_netrc_lines` is only supported with `maven_install_json` specified", "additional_netrc_lines")
+    if additional_netrc_lines and not pinned:
+        fail("`additional_netrc_lines` is only supported with `maven_install_json` or `maven_install_dict` specified", "additional_netrc_lines")
 
     # The first coursier_fetch generates the @unpinned_maven
     # repository, which executes Coursier.
@@ -101,7 +107,7 @@ def maven_install(
         # maven_install.json file. The actual @{name} repository will be
         # created from the maven_install.json file in the coursier_fetch
         # invocation after this.
-        name = name if maven_install_json == None else "unpinned_" + name,
+        name = name if not pinned else "unpinned_" + name,
         repositories = repositories_json_strings,
         artifacts = artifacts_json_strings,
         fail_on_missing_checksum = fail_on_missing_checksum,
@@ -118,20 +124,23 @@ def maven_install(
         jetify_include_list = jetify_include_list,
     )
 
+    pinned_coursier_fetch_args = {
+        "name": name,
+        "artifacts": artifacts_json_strings,
+        "fetch_sources": fetch_sources,
+        "generate_compat_repositories": generate_compat_repositories,
+        "override_targets": override_targets,
+        "strict_visibility": strict_visibility,
+        "jetify": jetify,
+        "jetify_include_list": jetify_include_list,
+        "additional_netrc_lines": additional_netrc_lines,
+    }
     if maven_install_json != None:
         # Create the repository generated from a maven_install.json file.
-        pinned_coursier_fetch(
-            name = name,
-            artifacts = artifacts_json_strings,
-            maven_install_json = maven_install_json,
-            fetch_sources = fetch_sources,
-            generate_compat_repositories = generate_compat_repositories,
-            override_targets = override_targets,
-            strict_visibility = strict_visibility,
-            jetify = jetify,
-            jetify_include_list = jetify_include_list,
-            additional_netrc_lines = additional_netrc_lines,
-        )
+        pinned_coursier_fetch(maven_install_json = maven_install_json, **pinned_coursier_fetch_args)
+    elif maven_install_dict != None:
+        # Create the repository generated from a dict from a maven_install.bzl file.
+        pinned_coursier_fetch_dict(maven_install_dict = maven_install_dict, **pinned_coursier_fetch_args)
 
 def artifact(a, repository_name = DEFAULT_REPOSITORY_NAME):
     artifact_obj = _parse_artifact_str(a) if type(a) == "string" else a

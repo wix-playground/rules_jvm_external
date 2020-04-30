@@ -146,7 +146,7 @@ maven_install(
         "com.google.guava:guava:27.0-jre",
         "javax.inject:javax.inject:1",
         "org.apache.beam:beam-sdks-java-core:2.15.0",
-        "org.bouncycastle:bcprov-jdk15on:1.64"
+        "org.bouncycastle:bcprov-jdk15on:1.64",
     ],
     maven_install_json = "//tests/custom_maven_install:manifest_stamp_testing_install.json",
     repositories = [
@@ -161,56 +161,76 @@ pinned_maven_install()
 # These artifacts helped discover limitations by the Maven resolver. Each
 # artifact listed here *must have* an accompanying issue. We build_test these
 # targets to ensure that they remain supported by the rule.
+REGRESSION_TESTING_ARTIFACTS = [
+    # https://github.com/bazelbuild/rules_jvm_external/issues/74
+    "org.pantsbuild:jarjar:1.6.6",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/59
+    "junit:junit:4.12",
+    "org.jetbrains.kotlin:kotlin-test:1.3.21",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/101
+    "com.digitalasset:damlc:jar:osx:100.12.1",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/116
+    "org.eclipse.jetty.orbit:javax.servlet:3.0.0.v201112011016",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/92#issuecomment-478430167
+    maven.artifact(
+        "com.squareup",
+        "javapoet",
+        "1.11.1",
+        neverlink = True,
+    ),
+    # https://github.com/bazelbuild/rules_jvm_external/issues/98
+    "com.github.fommil.netlib:all:1.1.2",
+    "nz.ac.waikato.cms.weka:weka-stable:3.8.1",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/111
+    "com.android.support:appcompat-v7:aar:28.0.0",
+    "com.google.android.gms:play-services-base:16.1.0",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/119#issuecomment-484278260
+    "org.apache.flink:flink-test-utils_2.12:1.8.0",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/170
+    "ch.epfl.scala:compiler-interface:1.3.0-M4+20-c8a2f9bd",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/172
+    "org.openjfx:javafx-base:11.0.1",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/178
+    "io.kubernetes:client-java:4.0.0-beta1",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/199
+    "com.google.ar.sceneform.ux:sceneform-ux:1.10.0",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/119#issuecomment-504704752
+    "com.github.oshi:oshi-parent:3.4.0",
+    "com.github.spinalhdl:spinalhdl-core_2.11:1.3.6",
+    "com.github.spinalhdl:spinalhdl-lib_2.11:1.3.6",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/201
+    "org.apache.kafka:kafka_2.11:2.1.1",
+    "io.confluent:kafka-avro-serializer:5.0.1",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/309
+    "io.quarkus.http:quarkus-http-servlet:3.0.0.Beta1",
+    # https://github.com/bazelbuild/rules_jvm_external/issues/371
+    "com.fasterxml.jackson:jackson-bom:2.9.10",
+    "org.junit:junit-bom:5.3.1",
+]
+
 maven_install(
     name = "regression_testing",
-    artifacts = [
-        # https://github.com/bazelbuild/rules_jvm_external/issues/74
-        "org.pantsbuild:jarjar:1.6.6",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/59
-        "junit:junit:4.12",
-        "org.jetbrains.kotlin:kotlin-test:1.3.21",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/101
-        "com.digitalasset:damlc:jar:osx:100.12.1",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/116
-        "org.eclipse.jetty.orbit:javax.servlet:3.0.0.v201112011016",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/92#issuecomment-478430167
-        maven.artifact(
-            "com.squareup",
-            "javapoet",
-            "1.11.1",
-            neverlink = True,
-        ),
-        # https://github.com/bazelbuild/rules_jvm_external/issues/98
-        "com.github.fommil.netlib:all:1.1.2",
-        "nz.ac.waikato.cms.weka:weka-stable:3.8.1",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/111
-        "com.android.support:appcompat-v7:aar:28.0.0",
-        "com.google.android.gms:play-services-base:16.1.0",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/119#issuecomment-484278260
-        "org.apache.flink:flink-test-utils_2.12:1.8.0",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/170
-        "ch.epfl.scala:compiler-interface:1.3.0-M4+20-c8a2f9bd",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/172
-        "org.openjfx:javafx-base:11.0.1",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/178
-        "io.kubernetes:client-java:4.0.0-beta1",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/199
-        "com.google.ar.sceneform.ux:sceneform-ux:1.10.0",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/119#issuecomment-504704752
-        "com.github.oshi:oshi-parent:3.4.0",
-        "com.github.spinalhdl:spinalhdl-core_2.11:1.3.6",
-        "com.github.spinalhdl:spinalhdl-lib_2.11:1.3.6",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/201
-        "org.apache.kafka:kafka_2.11:2.1.1",
-        "io.confluent:kafka-avro-serializer:5.0.1",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/309
-        "io.quarkus.http:quarkus-http-servlet:3.0.0.Beta1",
-        # https://github.com/bazelbuild/rules_jvm_external/issues/371
-        "com.fasterxml.jackson:jackson-bom:2.9.10",
-        "org.junit:junit-bom:5.3.1",
-    ],
+    artifacts = REGRESSION_TESTING_ARTIFACTS,
     generate_compat_repositories = True,
     maven_install_json = "//tests/custom_maven_install:regression_testing_install.json",
+    override_targets = {
+        "com.google.ar.sceneform:rendering": "@//tests/integration/override_targets:sceneform_rendering",
+    },
+    repositories = [
+        "https://repo1.maven.org/maven2",
+        "https://digitalassetsdk.bintray.com/DigitalAssetSDK",
+        "https://maven.google.com",
+        "https://packages.confluent.io/maven/",
+    ],
+)
+
+load("//tests/custom_maven_install:regression_testing_install.bzl", REGRESSION_TESTING_DEP_CLOSURE = "DEPENDENCY_CLOSURE")
+
+maven_install(
+    name = "regression_testing_bzl",
+    artifacts = REGRESSION_TESTING_ARTIFACTS,
+    generate_compat_repositories = True,
+    maven_install_dict = REGRESSION_TESTING_DEP_CLOSURE,
     override_targets = {
         "com.google.ar.sceneform:rendering": "@//tests/integration/override_targets:sceneform_rendering",
     },
@@ -309,12 +329,12 @@ maven_install(
         "com.typesafe.play:play_2.11:2.5.19",
         "org.scalatestplus.play:scalatestplus-play_2.11:2.0.1",
     ],
+    fetch_sources = True,
     repositories = [
         "https://repo1.maven.org/maven2",
     ],
-    version_conflict_policy = "pinned",
-    fetch_sources = True,
     use_unsafe_shared_cache = True,
+    version_conflict_policy = "pinned",
 )
 
 maven_install(
@@ -324,11 +344,11 @@ maven_install(
         "com.android.support:appcompat-v7:28.0.0",
         "com.android.support:swiperefreshlayout:28.0.0",
     ],
+    jetify = True,
     repositories = [
         "https://jcenter.bintray.com/",
         "https://maven.google.com",
     ],
-    jetify = True,
 )
 
 maven_install(
@@ -338,13 +358,13 @@ maven_install(
         "com.android.support:appcompat-v7:28.0.0",
         "com.android.support:swiperefreshlayout:28.0.0",
     ],
-    repositories = [
-        "https://jcenter.bintray.com/",
-        "https://maven.google.com",
-    ],
     jetify = True,
     jetify_include_list = [
         "com.android.support:appcompat-v7",
+    ],
+    repositories = [
+        "https://jcenter.bintray.com/",
+        "https://maven.google.com",
     ],
 )
 
@@ -356,12 +376,12 @@ maven_install(
         "io.quarkus:quarkus-maven-plugin:1.0.1.Final",
         "io.quarkus:quarkus-bom-descriptor-json:1.0.1.Final",
     ],
+    fetch_sources = True,
     maven_install_json = "//tests/custom_maven_install:json_artifacts_testing_install.json",
     repositories = [
         "https://repo.maven.apache.org/maven2/",
         "https://repo.spring.io/plugins-release/",
     ],
-    fetch_sources = True,
 )
 
 load(
